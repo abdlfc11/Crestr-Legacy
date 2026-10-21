@@ -1,0 +1,82 @@
+/* 
+  SLIDE PANEL
+
+  Defines the panel used by #settings-panel, #import-route-panel and #saved-routes-dashboard
+  
+  Panel-specific things such as unqiue content stay in each page's own file (css/pages/a_page.css) 
+*/
+
+/* Wrapper */
+#settings-panel,
+#import-route-panel,
+#saved-routes-dashboard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-family: var(--font-system);
+  background: var(--bg);
+  z-index: 3000;
+  transition: all 0.35s ease-in-out;
+}
+
+/* Inner content — flex column so header/content/footer stack and footer
+   can stick to the bottom via margin-top:auto on the destructive row */
+#settings-panel .inner-content,
+.import-route-inner,
+#saved-routes-dashboard .inner-content {
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header bar */
+.settings-header,
+.import-route-header,
+#top-section {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-alt);
+}
+
+/* Solid footer bar */
+.settings-sticky-footer,
+.import-route-footer {
+  background: var(--card-bg);
+  border-top: 1px solid var(--card-border);
+  padding: 1.1rem 4rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  gap: 1rem;
+}
+
+/* Close button (the "X") */
+.settingCloseButton,
+.import-route-close-button,
+#saved-routes-dashboard .closebtn {
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted-alt);
+  text-decoration: none;
+  transition: transform 0.2s ease, color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 7px;
+  border-radius: 5px;
+}
+
+.settingCloseButton:hover,
+.import-route-close-button:hover,
+#saved-routes-dashboard .closebtn:hover {
+  color: var(--ink-strong);
+  transform: scale(1.1);
+}

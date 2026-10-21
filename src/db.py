@@ -1,0 +1,17 @@
+from sqlmodel import SQLModel, create_engine, Session
+from src.config import Config
+
+engine = create_engine(
+    Config.DATABASE_URI,
+    echo=True, # this is set to true for debugging, remove when in prod
+    pool_pre_ping=True,
+    hide_parameters=True # this is to prevent sensitive user data being exposed such as coordinates and IDs 
+)
+
+def get_session():
+    """
+    FastAPI dependency generator that yields an active database session 
+    and handles automatic cleanup after request execution.
+    """
+    with Session(engine) as session:
+        yield session

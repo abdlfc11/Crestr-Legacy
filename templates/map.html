@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Crestr Hiking App</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://images.crestr.co.uk/Crest-Logo.png" type="image/png">
+
+    <!-- OpenLayers -->
+
+    <!-- Despite moving to using npm packages, the server-rendered html + vite caused issues in loading the ol.css file -->
+    <!-- so the choice has been made to load the css via cdn instead of via npm. -->
+    <!-- However, JS / TS is still loaded via npm packages. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.9.0/ol.css">
+
+
+    <!-- #region CSS FILES -->
+
+    <!-- Global CSS files -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/base/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/base/reset.css') }}">
+
+    <!-- Page-Specific CSS Files -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/pages/map.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/pages/stats-panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/pages/saved-routes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/pages/settings-panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/pages/import-route.css') }}">
+
+    <!-- Component CSS Files --> 
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/toggle-switch.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/error-toast.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/loading-spinner.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/tooltip.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/donate-modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/load-last-route-modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/shortcuts-modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/form-fields.css') }}">
+
+    <!-- Layout CSS Files -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/layout/nav-rail.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/layout/slide-panel.css') }}">
+
+    <!-- Tours.js CSS File-->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/vendor/tours.css') }}">
+
+    <!-- Vite-extracted CSS (sidecars from JS-imported stylesheets, e.g. driver.js) -->
+    {% for css_path in vite_css('static/js/routes/savedRoutesDashboard.ts') %}
+    <link rel="stylesheet" href="{{ url_for('static', path=css_path) }}" />
+    {% endfor %}
+
+    <!-- #endregion -->
+
+    <!-- ICONS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Umami Analytics -->
+    <!-- SELF HOSTERS: Change values in your .env file -->
+    <!-- Umami Analytics -->
+    {% if config.UMAMI_WEBSITE_ID %}
+    <script async defer 
+            src="{{ config.UMAMI_SCRIPT_URL }}" 
+            data-website-id="{{ config.UMAMI_WEBSITE_ID }}">
+    </script>
+    {% endif %}
+
+</head>
+<body>
+
+    <!-- ##### ERROR TOAST CONTAINER ##### -->
+    <div id="error-toast-container"></div>
+
+
+    <div id="map-content">
+
+        <div class="mobile-attribution-control">
+            <button
+                id="mobile-attribution-button"
+                class="mobile-button"
+                type="button"
+                aria-label="Show map attributions"
+                aria-expanded="false"
+                aria-controls="mobile-attributions"
+            >i</button>
+            <div id="mobile-attributions" class="mobile-attributions" aria-label="Map attributions">
+                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                <span aria-hidden="true">|</span>
+                <span>
+                    Map data: © <a href="https://www.openstreetmap.org/copyright/">OpenStreetMap</a>,
+                    SRTM
+                </span>
+                <span aria-hidden="true">|</span>
+                <span>
+                    Map style: © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)
+                </span>
+            </div>
+        </div>
+
+        <!-- ##### MAIN ROUTING PANEL ##### -->
+        <div id="start-end">
+            <div class="coords-header">
+                <span class="coords-title">Route Creation</span>
+                <button id="home-button" class="home-button" aria-label="Reset view and inputs"><i data-lucide="rotate-ccw"></i></button>
+            </div>
+            <div class="coords-content" id="manual-mode-content">
+                    <div id="search-row" class="coord-row">
+                        <label for="search-entry" class="coord-label">Search for an Area</label>
+                        <div class="coord-input-group">
+                            <input type="text" id="search-entry" name="search-entry" placeholder="search here" class="coord-input">
+                            <button type="button" id="search-for-area-button" class="coord-button">Search</button>
+                        </div>
+                    </div>
+                    <div id="coordinates-area">
+                        <div class="coord-row">
+                            <label for="start-point-entry" class="coord-label">Start Coordinates</label>
+                            <div class="coord-input-group">
+                                <input type="text" id="start-point-entry" name="start_point" placeholder="Coordinates" required class="coord-input" list="start-points-list">
+                                <button type="button" id="set-start-coord-button" class="coord-button set-start-end-coord">Set</button>
+                            </div>
+                        </div>
+                        <div class="coord-row">
+                            <label for="end-point-entry" class="coord-label">End Coordinates</label>
+                            <div class="coord-input-group">
+                                <input type="text" id="end-point-entry" name="end_point" placeholder="Coordinates" required class="coord-input" list="end-points-list">
+                                <button type="button" id="set-end-coord-button" class="coord-button set-start-end-coord">Set</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="routing-buttons">
+
+                        <button
+                            type="button"
+                            class="generate-button loading-button"
+                            id="generate-path-button"
+                        >
+                            <span class="loading-button-text" id="generate-path-button-text">Create route</span>
+                            <span class="loader"></span>
+                        </button>
+
+                        <button
+                            type="button"
+                            id="undo-manual-route"
+                            class="generate-button routing-svg-button"
+                            data-tooltip="Undo"
+                            aria-label="Undo the last point"
+                        >
+                            <i data-lucide="undo-2"></i>
+                        </button>
+
+                        <button
+                            type="button"
+                            id="redo-manual-route"
+                            class="generate-button routing-svg-button"
+                            data-tooltip="Redo"
+                            aria-label="Redo the last point"
+                        >
+                            <i data-lucide="redo-2"></i>
+                        </button>
+
+                        <button
+                            type="button"
+                            id="clear-route-button"
+                            class="generate-button btn-secondary routing-svg-button"
+                            data-tooltip="Clear Route"
+                            aria-label="Clear route"
+                        >
+                            <i data-lucide="eraser"></i>
+                        </button>
+                    </div>
+            </div>
+        </div>
+
+        <div id="save-route-container" {% if not current_path %}style="display: none;"{% endif %}>
+
+            <!-- toggle button container -->
+            <div id="save-route-button-container">
+
+                <!-- toggle button -->
+                <button id="save-route-toggle-button" class="closed">
+                    <i data-lucide="chevron-down"></i>
+                    <span>Save Route</span>
+                    <span></span>
+                </button>
+
+                <div id="save-route">
+                    <div class="coords-content">
+                        <form id="save-route-form">
+                            <div class="coord-row">
+                                <div class="coord-input-group">
+                                    <input type="text" id="route-name" name="route_name"
+                                        placeholder="Enter route name" required class="coord-input">
+                                </div>
+                            </div>
+                            <button type="submit" class="generate-button">Save Route</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div id="mobile-save-route-container">
+            <button
+                id="mobile-save-route-button"
+                class="mobile-button"
+                type="button"
+                aria-label="Open modal to save a route"
+                
+            >
+                <i data-lucide="bookmark"></i>
+            </button>
+        </div>
+
+        <div class="mobile-nav-container">
+            <button id="mobile-nav-button" class="mobile-button" aria-label="Open navigation dropdown">
+                <i data-lucide="menu"></i>
+            </button>
+            
+            <div id="mobile-nav-dropdown-content" class="context-menu">
+                <button id="mobile-nav-saved-routes" class="context-menu-option" aria-label="Open saved routes panel">Saved Routes</button>
+                <button id="mobile-nav-import-route" class="context-menu-option" aria-label="Open import route panel">Import Routes</button>
+                <button id="mobile-nav-settings" class="context-menu-option" aria-label="Open settings panel">Settings</button>
+                <button id="mobile-nav-report-bug" class="context-menu-option" aria-label="Open report issue modal">Report Bug</button>
+                <button id="mobile-nav-donate" class="context-menu-option" aria-label="Open donate modal">Donate</button>
+                {% if user is none %} 
+                <button id="mobile-nav-login" class="context-menu-option" aria-label="Press to login">Login</button>
+                {% else %}
+                <button id="mobile-nav-logout" class="context-menu-option" aria-label="Press to logout">Log out</button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mobile-actions-container">
+            <button
+                id="mobile-actions-button"
+                class="mobile-button"
+                aria-controls="mobile-actions"
+                aria-expanded="false"
+                aria-label="Show route actions"
+            >
+                <i data-lucide="route"></i>
+            </button>
+
+            <div id="mobile-actions" class="mobile-actions">
+                <button 
+                    id="mobile-undo-button"
+                    class="mobile-button mobile-routing-button"
+                    aria-label="undo route point"
+                >
+                    <i data-lucide="undo-2"></i>
+                </button>
+
+                <button
+                    id="mobile-redo-button" 
+                    class="mobile-button mobile-routing-button"
+                    aria-label="redo route point"
+                >
+                    <i data-lucide="redo-2"></i>
+                </button>
+
+                <button
+                    id="mobile-clear-button"
+                    class="mobile-button mobile-routing-button"
+                    aria-label="clear route"
+                >
+                    <i data-lucide="eraser"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ##### DONATE MODAL ##### -->
+        <dialog class="modal-overlay" id="donate-modal">
+            <div class="modal-wrapper" id="donate-modal-wrapper">
+                <div class="modal-content donate-modal-content" id="donate-modal-content">
+                    <button class="donate-modal-close" id="donate-modal-close-button" data-donate-close aria-label="Close">&times;</button>
+                
+                    <div class="modal-header">
+                        <h2>Support Crestr</h2>
+                    </div>
+                
+                    <div class="modal-body donate-modal-body">
+                        <p>Crestr is free and in active development. Donations go toward hosting costs, no pressure, and Crestr stays free either way.</p>
+                    </div>
+                
+                    <div class="donate-options">
+                        <a class="donate-option" href="https://liberapay.com/abd_ulll16/donate" target="_blank" rel="noopener noreferrer">
+                        <span class="donate-option-icon">
+                            <i data-lucide="heart"></i>
+                        </span>
+                        <span class="donate-option-text">
+                            <span class="donate-option-name">Liberapay</span>
+                            <span class="donate-option-desc">Recurring, weekly or monthly</span>
+                        </span>
+                        <i data-lucide="move-right"></i>
+                        </a>
+                
+                        <a class="donate-option" href="https://ko-fi.com/abdulsultan" target="_blank" rel="noopener noreferrer">
+                        <span class="donate-option-icon">
+                            <i data-lucide="coffee"></i>
+                        </span>
+                        <span class="donate-option-text">
+                            <span class="donate-option-name">Ko-fi</span>
+                            <span class="donate-option-desc">One-off, buy Crestr a coffee</span>
+                        </span>
+                        <i data-lucide="move-right"></i>
+                        </a>
+                    </div>
+            
+                    <div class="modal-actions">
+                        <button id="donate-modal-maybe-later-button" class="modal-btn modal-btn-secondary" data-donate-close type="button">Maybe later</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### CONTEXT MENU ##### -->
+        <div id="map-context-menu" class="context-menu" role="menu" aria-label="Map options" hidden>
+            <ul class="context-menu-options">
+                <li>
+                    <button id="map-context-save-point" class="context-menu-option" type="button" role="menuitem">
+                        Save point
+                    </button>
+                    <button id="map-context-copy-coordinate" class="context-menu-option" type="button" role="menuitem">
+                        Copy Coordinates
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- ##### SAVE POINT ##### -->
+        <dialog id="save-point-dialog" class="modal-overlay">
+            <div class="modal-wrapper">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Save Point</h2>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <input type="text" id="save-point-dialog-name-input" name="save-point-name" class="field-input" aria-label="Input to add point name" placeholder="Name" required>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="save-point-dialog-close" class="modal-btn modal-btn-secondary">Close</button>
+                        <button id="save-point-dialog-save" class="modal-btn modal-btn-normal">Save</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### SAVE ROUTE ##### -->
+        <dialog id="save-route-dialog" class="modal-overlay">
+            <div class="modal-wrapper">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Save Route</h2>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <input type="text" id="save-route-dialog-name-input" name="save-route-name" class="field-input" aria-label="Input name to save route" placeholder="Name" required>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="save-route-dialog-close" class="modal-btn modal-btn-secondary">Close</button>
+                        <button id="save-route-dialog-save" class="modal-btn modal-btn-normal">Save</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### REPORT ISSUE MODAL ##### -->
+        <dialog id="report-issue-dialog" class="modal-overlay">
+            <div class="modal-wrapper">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Report an Issue</h2>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <label for="report-issue-title" class="field-label">Title</label>
+                            <input type="text" id="report-issue-title" name="issue-title" class="field-input" aria-label="Input to add issue title" placeholder="A short summary of the issue" required>
+                        </div>
+
+                        <div class="field">
+                            <label for="report-issue-description" class="field-label">Describe the issue</label>
+                            <textarea id="report-issue-description" name="issue-description" class="field-textarea" aria-label="Input to add issue description" rows="5" placeholder="What happened? What did you expect instead?" required></textarea>
+                        </div>
+
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="report-issue-dialog-exit" class="modal-btn modal-btn-secondary">Close</button>
+                        <button id="report-issue-dialog-submit" class="modal-btn modal-btn-normal">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### LOGIN MODAL ##### -->
+        <dialog id="login-dialog" class="modal-overlay">
+            <div class="modal-wrapper">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Login</h2>
+                    </div>
+                    <div class="modal-body">
+                        <p>An account is required to perform this action.</p>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="login-dialog-exit" class="modal-btn modal-btn-secondary">Close</button>
+                        <button id="login-dialog-login" class="modal-btn modal-btn-normal">Login</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### DELETE POINT MODAL ##### -->
+        <dialog id="delete-point-confirmation-dialog" class="modal-overlay">
+            <div class="modal-wrapper">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Delete Point</h2>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to remove this point:</p>
+                        <p><span id="point-name-display"></span>?</p>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="point-delete-exit-button" class="modal-btn modal-btn-secondary">Exit</button>
+                        <button id="point-delete-delete-button" class="modal-btn modal-btn-danger">Delete Point</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### LOAD LAST ROUTE MODAL ##### -->
+        <dialog id="load-last-route-dialog" class="modal-overlay">
+            <div class="modal-wrapper">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h2>Load your last route?</h2>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="load-last-route-modal-route-container">
+                            <div class="load-last-route-modal-route-row">
+                                <p>Name</p>
+                                <span id="load-last-route-modal-route-name" class="modal-route-name"></span>
+                            </div>
+                            <div class="load-last-route-modal-route-row">
+                                <p>Distance</p>
+                                <span id="load-last-route-modal-route-distance" class="modal-route-distance"></span>
+                            </div>
+                            <div class="load-last-route-modal-route-row">
+                                <p>Elevation Gain</p>
+                                <span id="load-last-route-modal-route-elevation-gain"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="load-last-route-dialog-dismiss-button" class="modal-btn modal-btn-danger">Discard</button>
+                        <button id="load-last-route-dialog-load-button" class="modal-btn modal-btn-normal">Load</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### KEYBOARD SHORTCUTS MODAL ##### -->
+        <dialog id="shortcuts-dialog" class="modal-overlay" aria-labelledby="shortcuts-dialog-heading">
+            <div class="modal-wrapper">
+                <div class="modal-content shortcuts-modal-content">
+                    <div class="modal-header">
+                        <h2 id="shortcuts-dialog-heading">Keyboard Shortcuts</h2>
+                    </div>
+                    <div class="modal-body shortcuts-modal-body">
+                        <div class="shortcuts-group">
+                            <h3 class="shortcuts-group-title">General</h3>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Focus Map Search</span>
+                                <span class="shortcut-key"><kbd>Ctrl/⌘</kbd><span class="shortcut-key-plus">+</span><kbd>Shift</kbd><span class="shortcut-key-plus">+</span><kbd>K</kbd></span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Reset View and Inputs</span>
+                                <span class="shortcut-key"><kbd>Ctrl/⌘</kbd><span class="shortcut-key-plus">+</span><kbd>Shift</kbd><span class="shortcut-key-plus">+</span><kbd>H</kbd></span>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-group">
+                            <h3 class="shortcuts-group-title">Manual Routing</h3>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Undo Last Point</span>
+                                <span class="shortcut-key"><kbd>Ctrl/⌘</kbd><span class="shortcut-key-plus">+</span><kbd>Z</kbd></span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Redo Last Point</span>
+                                <span class="shortcut-key"><kbd>Ctrl/⌘</kbd><span class="shortcut-key-plus">+</span><kbd>Y</kbd></span>
+                            </div>
+                        </div>
+
+                        <div class="shortcuts-group">
+                            <h3 class="shortcuts-group-title">Navigation</h3>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Saved Routes</span>
+                                <span class="shortcut-key"><kbd>1</kbd></span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Import Route</span>
+                                <span class="shortcut-key"><kbd>2</kbd></span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Settings</span>
+                                <span class="shortcut-key"><kbd>3</kbd></span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Report Issue</span>
+                                <span class="shortcut-key"><kbd>4</kbd></span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Donate</span>
+                                <span class="shortcut-key"><kbd>5</kbd></span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-name">Keyboard Shortcuts</span>
+                                <span class="shortcut-key"><kbd>6</kbd></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="shortcuts-dialog-close-button" class="modal-btn modal-btn-secondary">Close</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <!-- ##### SHARE ROUTE MODAL (QR Code) ##### -->
+        <dialog id="share-route-dialog" class="modal-overlay">
+            <div class="modal-wrapper">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Share Route</h2>
+                    </div>
+                    <div class="modal-body">
+                        <canvas id="share-route-dialog-canvas"></canvas>
+                        <p>This QR code opens the route on Crestr for viewing (and eventually editing). </p>
+                        
+                        <p>Alternatively you can share the link copied to the clipboard.</p>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="share-route-dialog-exit-button" class="modal-btn modal-btn-secondary">Exit</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <div id="map"></div>
+    </div>
+
+    <!-- ##### SIDE NAV RAIL ##### -->
+    <div id="the-sidenav" class="sidenav" aria-label="Main navigation">
+        <div class="sidenav-inner">
+            <button
+                type="button"
+                id="saved-routes-dash-open-button"
+                class="sidenav-button"
+                aria-label="Saved Routes"
+            >
+                <i data-lucide="waypoints"></i>
+                <span class="nav-label">Saved Routes</span>
+            </button>
+
+            <button
+                type="button"
+                id="import-route-open-button"
+                class="sidenav-button"
+                aria-label="Import Route"
+            >
+                <i data-lucide="import"></i>
+                <span class="nav-label">Import Route</span>
+            </button>
+
+            <button
+                type="button"
+                id="settings-open-button"
+                class="sidenav-button"
+                aria-label="Settings"
+            >
+                <i data-lucide="settings"></i>
+                <span class="nav-label">Settings</span>
+            </button>
+
+            <div class="sidenav-lower">
+                <button
+                    type="button"
+                    id="report-issues-open-button"
+                    class="sidenav-button"
+                    aria-label="Report Issues"
+                >
+                    <i data-lucide="bug"></i>
+                    <span class="nav-label">Report Issues</span>
+                </button>
+
+                <button
+                    type="button"
+                    class="sidenav-button lower-sidenav-button"
+                    id="donate-button"
+                    aria-label="Donate"
+                >
+                    <i data-lucide="heart"></i>
+                    <span class="nav-label">Donate</span>
+                </button>
+
+                <button
+                    type="button"
+                    id="sidenav-shortcuts-button"
+                    class="sidenav-button lower-sidenav-button"
+                    aria-label="Keyboard Shortcuts"
+                >
+                    <i data-lucide="keyboard"></i>
+                    <span class="nav-label">Shortcuts</span>
+                </button>
+
+                {% if user is none %} 
+                    <button
+                        type="button"
+                        id="sidenav-login-button"
+                        class="sidenav-button lower-sidenav-button"
+                        aria-label="Log In"
+                    >
+                        <i data-lucide="log-in"></i>
+                        <span class="nav-label">Log In</span>
+                    </button>
+                {% else %}
+                    <button
+                        type="button"
+                        id="sidenav-logout-button"
+                        class="sidenav-button lower-sidenav-button"
+                        aria-label="Log Out"
+                    >
+                        <i data-lucide="log-out"></i>
+                        <span class="nav-label">Log Out</span>
+                    </button>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ##### SAVED ROUTE DASHBOARD ##### -->
+    <div id="saved-routes-dashboard">
+        <div class="inner-content">
+            
+                {% if user is none or not user.preferred_name %}
+                    <header id="dashboard-header" class="saved-route-header">
+                        <div id="top-section">
+                            <h1>Please Login to save routes</h1>
+                            <div id="go-back-button-container">
+                                <a class="closebtn" id="saved-routes-dash-go-back-button">&times;</a>
+                            </div>  
+
+                        </div>
+                    </header>
+                {% else %}
+
+                <header id="dashboard-header" class="saved-route-header">
+                    <div id="top-section">
+                        <h1>Hi {{ user.preferred_name }}, these are your saved routes</h1>
+
+                        <div id="go-back-button-container">
+                            <a class="closebtn" id="saved-routes-dash-go-back-button">&times;</a>
+                        </div>  
+
+                    </div>
+                </header>
+
+                <div id="all-routes-container">
+                    <div class="route-list-header" aria-hidden="true">
+                        <span>Route</span>
+                        <span>Saved</span>
+                        <span>Distance</span>
+                        <span>ETA</span>
+                        <span>Elevation gain</span>
+                        <span class="route-list-options-heading">Options</span>
+                    </div>
+                    {% if available_routes %}
+                        {% for route in available_routes %}
+                        <div class="route-card" data-route-name="{{ route.name }}">
+                            <div class="route-card-cell route-card-primary">
+                                <h3 class="route-card-name">{{ route.name }}</h3>
+                            </div>
+                            <div class="route-card-cell">
+                                <span class="route-card-mobile-label">Saved</span>
+                                <span class="route-card-date">{{ route.created_at | strftime("%d/%m/%Y") }}</span>
+                            </div>
+                            <div class="route-card-cell">
+                                <span class="route-card-mobile-label">Distance</span>
+                                <span class="route-card-value" data-distance-km="{{ route.distance_km }}">{{ route.distance_km | format_distance }}</span>
+                            </div>
+                            <div class="route-card-cell">
+                                <span class="route-card-mobile-label">ETA</span>
+                                <span class="route-card-value">{{ route.eta_seconds | format_eta }}</span>
+                            </div>
+                            <div class="route-card-cell">
+                                <span class="route-card-mobile-label">Elevation gain</span>
+                                <span class="route-card-value">{{ route.elevation_change | format_elevation }}</span>
+                            </div>
+                            <div class="route-card-actions">
+                                <button
+                                    type="button"
+                                    class="route-card-actions-buttons route-card-actions-load-route-button"
+                                    aria-label="Load Route"
+                                    data-tooltip="Load Route"
+                                >
+                                    <i data-lucide="arrow-up-right"></i>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="route-options-button route-card-actions-buttons"
+                                    aria-label="Options for {{ route.name }}"
+                                    aria-haspopup="menu"
+                                    aria-expanded="false"
+                                >
+                                    <span aria-hidden="true">&#8230;</span> 
+                                </button>
+                                <div class="route-actions-menu" hidden>
+
+                                    <button
+                                        type="button"
+                                        class="route-btn share-route-button"
+                                    >
+                                        Share Route
+                                    </button>
+
+                                    <button 
+                                        type="button" 
+                                        class="route-btn route-btn-download-gpx"
+                                    >
+                                        <span class="route-btn-text">Download GPX</span>
+                                        <span class="loader" aria-hidden="true"></span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="route-btn route-btn-download-geojson"
+                                    >
+                                        <span class="route-btn-text">Download GeoJSON</span>
+                                        <span class="loader" aria-hidden="true"></span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="route-btn route-btn-delete"
+                                    >
+                                        Delete route
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    
+                    {% else %}
+                        <div id="no-routes-wrapper-container" class="no-routes-wrapper">
+                            <div class="no-routes-card">
+                                <h2 class="no-routes-title">No routes saved yet</h2>
+                                <p class="no-routes-description">
+                                    You haven’t created any routes. Start planning your next adventure below.
+                                </p>
+                                <button id="no-route-create-button" class="no-routes-create-btn generate-button">
+                                    Create a route
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ##### SETTINGS ##### -->
+    <div id="settings-panel">
+        <div class="inner-content">
+            <header class="settings-header">
+                <div class="settings-header-container">
+
+                    <h1>Settings</h1>
+                    
+                    <div id="settings-close-button-container">
+                        <a class="settingCloseButton" id="settings-close-button">&times;</a>
+                    </div>
+                </div>
+            </header>
+
+            <section class="settings-content">
+                <div class="settings-item">
+                    <div class="settings-text">
+                        <span class="settings-title">Distance Units</span>
+                        <span class="settings-description">Toggle between Kilometres and Miles</span>
+                    </div>
+                    
+                    <label class="switch-toggle">
+                        <input type="checkbox" id="distance-unit-checkbox">
+                        <span class="switch-slider"></span>
+                    </label>
+                 </div>
+ 
+                 <!-- Theme -->
+                 <div class="settings-item">
+                     <div class="settings-text">
+                         <span class="settings-title">Theme</span>
+                         <span class="settings-description">Choose appearance</span>
+                     </div>
+ 
+                     <div class="settings-radio-pills">
+                         <label class="radio-pill">
+                             <input type="radio" name="theme" value="light">
+                             <span>Light</span>
+                         </label>
+                         <label class="radio-pill">
+                             <input type="radio" name="theme" value="dark">
+                             <span>Dark</span>
+                         </label>
+                         <label class="radio-pill">
+                             <input type="radio" name="theme" value="system">
+                             <span>System</span>
+                         </label>
+                     </div>
+                 </div>
+ 
+                 <!-- Delete Account -->
+
+                 {% if user is none or not user.preferred_name %} 
+
+                {% else %} 
+                    <div class="settings-item settings-item-destructive" id="delete-account-container">
+                        <div class="delete-normal-state">
+
+                            <div class="settings-text">
+                                <span class="settings-title">Delete Account</span>
+                                <span class="settings-description">Permanently remove your account and all data</span>
+                            </div>
+                            
+                            <button
+                                class="delete-account-btn"
+                                type="button"
+                                id="settings-delete-account-button"
+                            >Delete</button>
+                            
+                        </div>
+
+                        <div class="delete-confirm-state" style="display: none; width: 100%;">
+                            <div class="settings-text">
+                                <span class="settings-title" style="color: #b91c1c;">Delete account?</span>
+                                <span class="settings-description">This cannot be undone.</span>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                                <button type="button" class="cancel-delete-btn" id="delete-cancel-button">Cancel</button>
+                                <button type="button" class="confirm-delete-btn" id="delete-confirm-button">Delete forever</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </section>
+
+            <!-- ##### FOOTER (inc. logout button) ##### -->
+            <div class="settings-sticky-footer">
+                <!-- Used to have logout button but this was moved to the sidenav -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ##### IMPORT ROUTE ##### -->
+    <div id="import-route-panel">
+        <div class="import-route-inner">
+
+            <!-- HEADER -->
+            <header class="import-route-header">
+                <div class="import-route-header-container">
+                    <h1 class="import-route-title">Import</h1>
+                    <h1 class="import-route-title">Route</h1>
+
+                    <div class="import-route-close-container">
+                        <a id="import-route-close-button" class="import-route-close-button">&times;</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <section class="import-route-content">
+
+                <!-- Import method -->
+                <div id="import-route-import-method-row" class="import-route-item">
+                    <div class="import-route-text">
+                        <span class="import-route-item-title">Import method</span>
+                        <span class="import-route-item-description">Choose how you want to load your route</span>
+                    </div>
+
+                    <div id="file-route-input-pill" class="settings-radio-pills">
+                        <label class="radio-pill">
+                            <input id="file-route-input-type" type="radio" name="import-route-method" value="file" checked>
+                            <span>File</span>
+                        </label>
+
+                        <label style="cursor: not-allowed;" id="url-route-input-pill" class="radio-pill" data-tooltip="We're currently building URL Import, please use the File Import feature to add your files.">
+                            <input id="url-route-input-type" type="radio" name="import-route-method" value="url" disabled>
+                            <span class="disabled">URL</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- file upload -->
+                <div class="import-route-item" id="import-route-file-row">
+                    <div class="import-route-text">
+                        <span class="import-route-item-title">Upload file</span>
+                        <span class="import-route-item-description">Supported: GPX, KML, FIT, GeoJSON</span>
+                    </div>
+
+                    <input 
+                        type="file"
+                        id="import-route-file-input"
+                        accept=".gpx,.kml,.fit,.geojson"
+                        class="settings-input"
+                    >
+                </div>
+
+                <!-- URL input -->
+                <div class="import-route-item" id="import-route-url-row" style="display: none;">
+                    <div class="import-route-text">
+                        <span class="import-route-item-title">Route URL</span>
+                        <span class="import-route-item-description">Paste a public route link</span>
+                    </div>
+
+                    <input 
+                        type="url" 
+                        id="import-route-url-input" 
+                        class="settings-input" 
+                        placeholder="https://example.com/route"
+                    >
+                </div>
+
+                <!-- route name -->
+                <div id="import-route-name-route-row" class="import-route-item">
+                    <div class="import-route-text">
+                        <span class="import-route-item-title">Route name</span>
+                        <span class="import-route-item-description">Name your imported route before saving</span>
+                    </div>
+
+                    <input 
+                        type="text" 
+                        id="import-route-name-input" 
+                        class="settings-input" 
+                        placeholder="My Route"
+                        required
+                        aria-required="true"
+                    >
+                </div>
+
+                <!-- recalculate elevation (TO BE ADDED) -->
+                <div class="import-route-item" style="visibility: hidden;">
+                    <div class="import-route-text">
+                        <span class="import-route-item-title">Recalculate elevation</span>
+                        <span class="import-route-item-description">Use Crest’s elevation engine instead of file values</span>
+                    </div>
+
+                    <label class="import-route-toggle">
+                        <input type="checkbox" id="import-route-recalculate-elevation" checked>
+                        <span class="import-route-toggle-slider"></span>
+                    </label>
+                </div>
+
+            </section>
+
+            <!-- FOOTER -->
+            <div class="import-route-footer">
+                <button id="import-route-cancel-button" class="import-route-footer-button secondary">
+                    Cancel
+                </button>
+
+                <button id="import-route-submit-button" class="import-route-footer-button primary">
+                    Import Route
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ##### AppConfig to access API Enpoint URLS ##### -->
+    <script>
+        window.appConfig = {
+            // initial state
+            loggedIn: {{ logged_in }},
+            mapInitialCentre: {{ map_centre | tojson }},
+            mapInitialZoom: {{ map_zoom | default(10) }},
+            initialCurrentPath: {% if current_path %}{{ current_path | tojson }}{% else %}null{% endif %},
+            initialSavedPointsLookup: {
+                {% if saved_points %}
+                    {% for point in saved_points %}
+                    "{{ point.name }}": "{{ point.coordinates[0] }}, {{ point.coordinates[1] }}",
+                    {% endfor %}
+                {% endif %}
+            },
+
+            // auth API endpoints
+            apiLogoutUrl: "/auth/logout",
+            apiDeleteAccountUrl: "/auth/delete-account",
+
+            // routing API endpoints
+            apiCalculatePathUrl: "/routing/calculate-path",
+            apiGetRouteDataUrl: "/routing/get-route-data",
+            apiSaveRouteUrl: "/routing/save-route",
+            apiLoadRouteUrl: "/routing/load-route",
+            apiDeleteRouteUrl: "/routing/delete-route",
+            apiDownloadRouteFileUrl: "/routing/download-route",
+            apiImportRouteUrl: "/routing/import-route-file",
+            apiNormaliseRouteStatsUrl: "/routing/normalise-route-stats",
+            apiAddSharedRouteUrl: "/routing/add-shared-route",
+            apiGetSharedRouteUrl: "/routing/route",
+
+            // points + search API endpoints
+            apiSearchAreaUrl: "/search/search-area",
+            apiSavePointUrl: "/points/save-point",
+            apiGetSavedPointsUrl: "/points/get-saved-points",
+            apiDeletePointUrl: "/points/delete-point",
+
+            // settings API endpoints
+            apiGetSettings: "/settings/get-settings",
+            apiSaveSettings: "/settings/save-settings",
+
+            // navigation API endpoint 
+            mapPageUrl: "/map",
+
+            // utility and error logging endpoints 
+            apiLogErrorUrl: '/api/log-error',
+            apiReportIssueUrl: '/api/report-issue'
+        };
+    </script>
+
+    <!-- Vite builds (asset paths resolved from the Vite build manifest via vite_asset(),
+         so entry filenames can be content-hashed to bust browser/CDN caches) -->
+    <script type="module" src="{{ url_for('static', path=vite_asset('static/js/init/init.ts')) }}"></script>
+    <script type="module" src="{{ url_for('static', path=vite_asset('static/js/routes/savedRoutesDashboard.ts')) }}"></script>
+    <script type="module" src="{{ url_for('static', path=vite_asset('static/js/importRoute.ts')) }}"></script>
+
+</body>
+</html>

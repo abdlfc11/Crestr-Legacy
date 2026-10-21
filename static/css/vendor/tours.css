@@ -1,0 +1,107 @@
+/* CUSTOM THEME FOR DRIVER.JS TOURS */
+
+/* Popover wrapper */
+.driver-popover.app-tour-theme {
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-surface);
+  padding: 20px 22px;
+  max-width: 340px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Arrows */
+.app-tour-theme .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: var(--bg);
+}
+.app-tour-theme .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: var(--bg);
+}
+.app-tour-theme .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: var(--bg);
+}
+.app-tour-theme .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: var(--bg);
+}
+
+/* Title + Description */
+.app-tour-theme .driver-popover-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--tour-ink);
+  margin-bottom: 6px;
+}
+
+.app-tour-theme .driver-popover-description {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Close button */
+.app-tour-theme .driver-popover-close-btn {
+  color: var(--ink) !important;
+  font-size: 16px;
+  top: 16px;
+  right: 16px;
+  transition: all .15s ease-in-out;
+}
+.app-tour-theme .driver-popover-close-btn:hover {
+  color: var(--error-accent) !important;
+  transform: translateY(-1.5px);
+}
+
+/* Footer */
+.app-tour-theme .driver-popover-footer {
+  margin-top: 16px;
+}
+
+.app-tour-theme .driver-popover-progress-text {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Buttons */
+.app-tour-theme .driver-popover-footer-btn {
+  background: var(--blue);
+  color: #FFF;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: none;
+  box-shadow: none;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.app-tour-theme .driver-popover-footer-btn:hover {
+  background: var(--blue-dark);
+  transform: translateY(-1px);
+}
+
+/* Previous buttons */
+.app-tour-theme .driver-popover-prev-btn {
+  background:var(--btn-bg);
+  color: #FFF;
+}
+
+.app-tour-theme .driver-popover-prev-btn:hover {
+  background: var(--btn-bg-hover);
+}
+
+/* Makes done button slightly darker blue */
+.app-tour-theme .driver-popover-next-btn.driver-popover-done-btn {
+  background: var(--blue);
+}
+.app-tour-theme .driver-popover-next-btn.driver-popover-done-btn:hover {
+  background: var(--blue-dark);
+}
+
+/* Highlighted element */
+.driver-active-element {
+  border-radius: var(--radius-md);
+}

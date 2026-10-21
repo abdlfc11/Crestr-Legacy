@@ -1,0 +1,136 @@
+/* NAVIGATION RAIL (sidenav)
+
+  A persistent, compact navigation rail that is always visible (on desktop) and
+  expands on pointer hover / keyboard focus to reveal its labels.
+
+  Distinct from the report-issue.css #navbar (a top navbar used on marketing/utility pages).
+*/
+
+:root {
+  --nav-width-collapsed: 48px;
+  --nav-width-expanded: 200px;
+  --nav-border: 1px solid rgba(0, 0, 0, 0.08);
+  --nav-border-radius: 30px;
+  --nav-transition: width 0.22s ease;
+
+  --nav-link-transition: background-color 0.15s ease, color 0.15s ease;
+  --nav-link-height: 44px;
+  --nav-link-height-compact: 40px;
+  --nav-link-padding: 0 5px;
+  --nav-link-margin: 8px 8px;
+  --nav-link-gap: 12px;
+  --nav-link-radius: 8px;
+
+  --nav-font-size: 18px;
+  --nav-font-weight: 500;
+  --nav-icon-size: 22px;
+
+  --nav-link-colour: #818181;
+  --nav-link-hover-colour: #000000;
+  --nav-link-hover-bg: #d1d5db;
+}
+
+html.dark {
+  --nav-border: 1px solid rgba(255, 255, 255, 0.12);
+
+  --nav-link-colour: #9ca3af;
+  --nav-link-hover-colour: #f3f4f6;
+  --nav-link-hover-bg: rgba(255, 255, 255, 0.08);
+}
+
+/* The rail itself */
+.sidenav {
+  height: 100%;
+  width: var(--nav-width-collapsed);
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--nav-transition);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-right: var(--nav-border);
+  background: var(--glass-bg);
+  border-right: 1px solid var(--border);
+  border-top-right-radius: var(--nav-border-radius);
+  border-bottom-right-radius: var(--nav-border-radius);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensures that the sidenav is expanded whenever the it is hovered over or one of the inner links are focused on */
+.sidenav:hover,
+.sidenav:focus-within {
+  width: var(--nav-width-expanded);
+}
+
+/* Inner Wrapper */
+.sidenav-inner {
+  width: var(--nav-width-expanded);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-top: 16px;
+}
+
+/* row styling which is shared between links and buttons */
+.sidenav-button {
+  display: flex;
+  align-items: center;
+  gap: var(--nav-link-gap);
+  height: var(--nav-link-height);
+  padding: var(--nav-link-padding);
+  margin: var(--nav-link-margin);
+  border-radius: var(--nav-link-radius);
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  color: var(--nav-link-colour);
+  font-size: var(--nav-font-size);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--nav-link-transition);
+}
+
+.sidenav-button:hover {
+  color: var(--nav-link-hover-colour);
+  background-color: var(--nav-link-hover-bg);
+}
+
+.sidenav-button:focus-visible {
+  outline: 2px solid var(--blue, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Icon sizing + styling */
+.sidenav-button svg {
+  width: var(--nav-icon-size);
+  height: var(--nav-icon-size);
+  flex-shrink: 0;
+}
+
+/* link text (i.e 'saved routes') styling */
+.sidenav-button .nav-label {
+  font-size: var(--nav-font-size);
+  font-weight: var(--nav-font-weight);
+  color: inherit;
+}
+
+/* Auth button container (placed at the bottom of the sidenav) */
+.sidenav-lower {
+  margin-top: auto;
+  padding: 12px 0 16px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nav limits for short viewports */
+@media (max-width: 768px) {
+  .sidenav {
+    display: none;
+  }
+}

@@ -1,0 +1,132 @@
+# Main docker-compose.yml file
+# Holds all services, volumes etc
+# Used during both self-hosting and prod dev, with prod dev overwriting ports on docker-compose.prod.yml (this isn't added to the main docker-compose workflow so docker-compose up only uses this file)
+
+services:
+
+  # POSTGRES DATABASE 
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - path: example.env
+        required: true
+      - path: .env
+        required: false
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"] 
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
+  # FASTAPI APP
+  web-fastapi:
+    build: .
+    command: gunicorn -c src/gunicorn.config.py fastapi_app:app # Prod
+    ### command: uvicorn fastapi_app:app --reload --host 0.0.0.0 --port 5001 # DEVELOPERS: use this command when debugging 
+    volumes:
+      - ./src:/app/src
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./migrations:/app/migrations
+      - graph_cache:/app/graph_generation/cache
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/src
+    # NOTE: no ports: mapping needed anymore for external access as
+    # Caddy talks to this over the internal docker network on 5001.
+    # Keep it here if you still want to hit it directly for debugging:
+    ports:
+      - "5001:5001"
+    env_file:
+      - path: example.env
+        required: true
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+  
+  # UMAMI ANALYTICS 
+  umami-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD}
+    volumes:
+      - umami_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"   # Local access: http://localhost:3000
+    environment:
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD}@umami-db:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET}
+      # Optional: uncomment these to make tracking harder to block (for self hosters + prod)
+      # COLLECT_API_ENDPOINT: /api/collect
+      # TRACKER_SCRIPT_NAME: analytics.js
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    # Healthcheck is commented out for now --> for dev and self hosters it is not needed
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:3000/api/heartbeat || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+  
+  # PGADMIN 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: crestr-pgadmin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
+      PGADMIN_CONFIG_SERVER_MODE: '${PGADMIN_SERVER_MODE}'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: '${PGADMIN_MASTER_REQ}'
+    ports:
+      - "${PGADMIN_PORT}:80" # Local access: http://localhost:5050 (configured via .env file)
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  
+  # CADDY SERVICe
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - path: caddy.env
+        required: true
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web-fastapi
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  umami_postgres_data:
+  caddy_data:
+  caddy_config:
+  graph_cache:

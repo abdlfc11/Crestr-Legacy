@@ -1,0 +1,132 @@
+/* 
+  BUTTONS
+
+  Extracted from report-issue.css (.btn/.btn-primary/.btn-ghost) + styles.css (auth-button), these were
+  generic, reusable button styles that happened to live in a page-specific file
+  
+  Now available to any page that links components.
+*/
+
+/* BTN */
+
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--blue-ring);
+  outline-offset: 2px;
+}
+
+/* BTN PRIMARY */
+
+.btn-primary {
+  color: #fff;
+  background: var(--blue);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--blue-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift-blue);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.btn-primary:disabled {
+  background: var(--btn-disabled-bg);
+  color: var(--btn-disabled-text);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* SECONDARY BUTTON */
+
+.btn-secondary {
+  background-color: var(--secondary-btn-bg);
+  color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-btn-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift-normal);
+}
+
+.btn-secondary:active {
+  transform: translateY(1px);
+}
+
+/* BTN GHOST */
+
+.btn-ghost {
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+  padding: 0.55rem 1rem 0.55rem 0.8rem;
+  border-radius: 999px;
+}
+
+.btn-ghost:hover {
+  color: var(--blue-dark);
+  background: var(--blue-soft);
+}
+
+.btn-ghost svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-ghost:hover svg {
+  transform: translateX(-2px);
+}
+
+/* BTN PILL */
+
+.btn-pill {
+  background: var(--btn-bg);
+  color: var(--secondary-ink);
+  border: none;
+  border-radius: 9999px;
+  padding: 0.7rem 2.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  letter-spacing: -0.01em;
+}
+
+.btn-pill:hover {
+  background: var(--btn-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.btn-pill:active {
+  transform: translateY(0);
+}

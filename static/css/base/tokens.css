@@ -1,0 +1,173 @@
+/* 
+  DESIGN TOKENS
+
+  Single source of truth for colors, radii, shadows and fonts.
+
+  Previously this was split (and partly duplicated) between report-issue.css and error.css 
+  
+  Everything else in the codebase hardcoded these same values as raw hex, that's the main thing this file fixes
+  Change a value here and it updates everywhere.
+*/
+
+:root {
+
+  /* Spacing of left-sided elements to prevent being under the side-nav */
+  --side-nav-space: 70px;
+
+  /* Brand blue (primary action color across the whole app) */
+  --blue: #2563eb;
+  --blue-dark: #1d4ed8;      /* report-issue.css hover shade */
+  --blue-dark-alt: #1e40af;  /* styles.css / route-card hover shade — kept distinct
+                                 on purpose, see MIGRATION.md "near-duplicate colors" */
+  --blue-soft: rgba(37, 99, 235, 0.08);
+  --blue-ring: rgba(37, 99, 235, 0.28);
+
+  /* Status colors */
+  --error: #dc2626;
+  --ok: #16a34a;
+  --error-accent: #ff4d4d;   /* the brighter red used on auth pages / toasts / error pages —
+                                 a different shade from --error, kept separate deliberately */
+
+  /* Surfaces */
+  --bg: #ffffff;
+  --surface-bg: rgba(255, 255, 255, 0.92);
+  --surface-subtle: #f1f5f9;
+  --field-bg: #ffffff;
+  --glass-bg: rgba(249, 250, 251, 0.4);   /* the glassmorphism slide-panel background */
+  --secondary-bg: #e2e8f0;
+  --secondary-bg-hover: #cbd5e1;
+  --tooltip-bg: rgba(206, 203, 203);
+  --list-item-bg: rgba(206, 203, 203, 0.85);
+  --list-item-bg-hover: rgba(169, 166, 166, 0.85);
+
+  --panel-glass-bg: rgb(255 255 255 / 0.65); /* the glassmorphism routing panel background */
+  --panel-glass-bg-hover: rgba(223, 221, 221, 0.65);
+
+  /* Text */
+  --ink: #1f2937;
+  --secondary-ink: #ffffff;
+  --ink-strong: #111827;
+  --muted: #64748b;
+  --muted-strong: #475569;
+  --muted-alt: #4b5563;
+  --placeholder: #94a3b8;
+  --tooltip-ink: #FFFFFF;
+
+  /* Borders */
+  --border: #e2e8f0;
+  --border-alt: #e5e7eb;
+  --secondary-border: #111827;
+
+  --btn-bg: #3c3c3c;
+  --btn-bg-hover: #454545;
+  --secondary-btn-bg: #595959;
+  --secondary-btn-bg-hover: #4b4a4a;
+  --danger-btn-bg-transparent: rgba(227, 49, 49, 0.2); 
+  --btn-disabled-bg: #93b4f2;
+  --btn-disabled-text: #ffffff;
+
+  /* Solid card surface (opaque alternative to the glassmorphism bg) */
+  --card-bg: #ffffff;
+  --card-border: #b9b8b8;
+
+  /* Layout and shapes */
+  --panel-radius: 7px;
+
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --radius-xs: 5px;
+  --radius-pill: 9999px;
+
+  /* Spacing */
+  --space-3xs: 0.125rem; 
+  --space-2xs: 0.25rem; 
+  --space-xs:  0.5rem;  
+  --space-sm:  0.75rem; 
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  --shadow-surface: 0 10px 35px rgba(15, 23, 42, 0.06);
+  --shadow-lift-blue: 0 4px 12px rgba(37, 99, 235, 0.28);
+  --shadow-lift-normal: 0 4px 12px rgba(86, 86, 87, 0.28);
+  --panel-shadow: 0 2px 6px rgba(0,0,0,0.1);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-system: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+
+  /* Toast tokens */
+  --toast-bg: rgba(255, 255, 255, 0.72);
+  --toast-blur: 12px;
+  --toast-text-primary: var(--ink-strong);
+  --toast-text-secondary: var(--muted);
+  --toast-error: #ef4444;
+  --toast-success: #22c55e;
+  --toast-warning: #f59e0b;
+  --toast-info: #3b82f6;
+  --toast-border: rgba(0, 0, 0, 0.08);
+  --toast-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --toast-radius: 12px;
+  --toast-padding: 14px 16px;
+  --toast-transition-speed: 0.3s;
+}
+
+/* DARK MODE */
+html.dark {
+  --bg: #212224;
+  --surface-bg: rgba(35, 36, 38, 0.8);
+  --surface-subtle: rgb(55 65 81 / 0.75);
+  --field-bg: #1c1c1e;
+  --secondary-field-bg: #2c3038;
+  --glass-bg: rgba(17, 24, 39, 0.85);
+  --secondary-bg: rgb(69, 68, 68);
+  --secondary-bg-hover: rgb(87, 87, 87);
+  --tooltip-bg: rgba(60, 60, 60, 0.85);
+  --list-item-bg: rgb(101, 100, 100);
+  --list-item-bg-hover: rgba(79, 77, 77, 0.85);
+
+  --panel-glass-bg: rgb(31 41 55 / 0.75);
+  --panel-glass-bg-hover: rgba(18, 25, 34, 0.75);
+
+  --ink: #f8fafc;
+  --secondary-ink: #ffffff;
+  --ink-strong: #f3f4f6;
+  --muted: #94a3b8;
+  --muted-strong: #9ca3af;
+  --muted-alt: #9ca3af;
+  --placeholder: #64748b;
+
+  --border: #1f2327;
+  --border-alt: #374151;
+  --secondary-border: #FFFFFF;
+
+  --blue: #3b82f6;
+  --blue-dark: #226bc3;
+  --blue-soft: rgba(59, 130, 246, 0.15);
+  --blue-ring: rgba(59, 130, 246, 0.4);
+
+  --btn-bg: #374151;
+  --btn-bg-hover: #4b5563;
+  --danger-btn-bg-transparent: rgba(158, 43, 43, 0.3); 
+  --secondary-btn-bg: #3d3c3c;
+  --secondary-btn-bg-hover: #313131;
+  --btn-disabled-bg: #1e293b;
+  --btn-disabled-text: #64748b;
+
+  --card-bg: #1e2024;
+  --card-border: #374151;
+
+  --shadow-surface: 0 10px 35px rgba(0, 0, 0, 0.3);
+  --shadow-lift-blue: 0 4px 12px rgba(37, 99, 235, 0.28);
+  --shadow-lift-normal: 0 4px 12px rgba(86, 86, 87, 0.28);
+  --shadow-lift: 0 4px 12px rgba(59, 130, 246, 0.2);
+
+  /* Toast tokens */
+  --toast-bg: rgba(33, 34, 36, 0.72);
+  --toast-border: rgba(255, 255, 255, 0.1);
+  --toast-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}

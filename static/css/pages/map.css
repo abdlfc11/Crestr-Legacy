@@ -1,0 +1,640 @@
+/*
+  MAP PAGE
+
+  The core route-planning screen: map container, mode toggle, coordinate
+  input panel, manual-mode controls, and save-route panel. The point
+  delete confirmation dialog itself is styled by components/modal.css;
+  only its page-specific content styling (the highlighted point name)
+  lives here.
+  
+  Depends on: base/tokens.css, components/loading-spinner.css,
+  components/modal.css, and pages/stats-panel.css (dark-mode rules below
+  reference it since both are always shown together on this page).
+*/
+
+/* local tokens */
+:root {
+  --map-bg-fallback: #f8f9fa;
+  --mode-button-hover-text: #334155;
+  --action-shadow-sm: 0 1px 3px rgba(37, 99, 235, 0.2); 
+  --generate-button-hover-shadow: 0 3px 6px rgba(37, 99, 235, 0.3);
+  --generate-button-active-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+  --coord-input-focus-border: #3b82f6;
+  --coord-input-focus-ring: 0 0 3px 1px rgba(59, 130, 246, 0.2), 0 0 8px 3px rgba(59, 130, 246, 0.1);
+  --coord-input-active-border: #5a76e7;
+  --home-button-bg: rgb(100 116 139 / 0.65);
+  --home-button-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --home-button-hover-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  --point-name-color: #ef4444;
+}
+
+/* Map container */
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 1;
+  background: var(--map-bg-fallback); /* fallback before OL tiles paint */
+  overflow: hidden;
+}
+
+/* RIGHT-CLICK MAP OPTIONS */
+.context-menu {
+  position: fixed;
+  z-index: 1200;
+  min-width: 5rem;
+  padding: var(--space-2xs);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-surface);
+  font-family: var(--font-sans);
+}
+
+.context-menu-options {
+  padding: 0;
+  margin: var(--space-sm) var(--space-2xs);
+  list-style: none;
+}
+
+.context-menu-option {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--ink);
+  background: var(--bg);
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: underline;
+}
+
+.context-menu-option:hover {
+  color: var(--blue)
+}
+
+.context-menu-option:focus {
+  outline: none;
+}
+
+.context-menu-option:focus-visible {
+  color: var(--blue);
+  outline: 2px solid var(--focus-ring, currentColor);
+  outline-offset: 2px;
+}
+
+/* OpenLayers */
+.ol-control {
+  right: 8px;
+  left: auto;
+}
+
+.mobile-attribution-control {
+  display: none;
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+}
+
+.mobile-attribution-control .mobile-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 700;
+}
+
+.mobile-attributions {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.35rem);
+  max-width: min(90vw, 30rem);
+  padding: 0.35rem 0.5rem;
+  color: var(--ink);
+  background: var(--panel-glass-bg);
+  border: 1px solid var(--border-alt);
+  border-radius: var(--radius-xs);
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: var(--font-sans);
+  font-size: 0.625rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.mobile-attributions a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.mobile-attributions a:hover {
+  color: var(--blue);
+}
+
+/* MANUAL ROUTE CREATION */
+#start-end {
+  position: absolute;
+  top: 1rem;
+  left: var(--side-nav-space);
+  z-index: 1000;
+  background: var(--panel-glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+  border: 1px solid var(--border-alt);
+  min-width: 240px;
+  max-width: calc(100vw - 90px);
+  font-family: var(--font-sans);
+}
+
+.coords-header {
+  background: var(--surface-subtle); /* --surface-subtle base color at a one-off alpha */
+  padding: 8px 12px;
+  border-radius: var(--panel-radius) var(--panel-radius) 0 0;
+  border-bottom: 1px solid var(--border-alt);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.coords-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.coords-content {
+  padding: 8px 12px;
+}
+
+.coord-row {
+  margin-bottom: 8px;
+}
+
+.coord-row:last-child {
+  margin-bottom: 0;
+}
+
+.coord-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted-strong);
+  font-weight: 500;
+  margin-bottom: 3px;
+  pointer-events: none;
+}
+
+.coord-input-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.coord-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border-alt);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--field-bg);
+  color: var(--ink);
+  width: 150px;
+  max-width: 100%;
+  transition: all 0.14s ease-in-out;
+}
+
+.coord-input:focus {
+  border-color: var(--coord-input-focus-border);
+  box-shadow: var(--coord-input-focus-ring);
+  outline: none;
+}
+
+.coord-input.input-error {
+  border-color: var(--error-accent);
+}
+
+.coord-input::placeholder {
+  color: var(--placeholder);
+}
+
+.coord-input.is-active {
+  border-color: var(--coord-input-active-border);
+}
+
+.coord-button {
+  padding: 6px 12px;
+  background: var(--surface-subtle);
+  color: var(--ink);
+  border: 1px solid var(--secondary-bg-hover);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.coord-button:hover {
+  background: var(--secondary-bg);
+  border-color: var(--placeholder);
+  transform: translateY(-1px);
+}
+
+.set-start-end-coord {
+  width: clamp(4rem, 4.4vw, 6rem);
+  font-size: clamp(0.75rem, 0.25vw, 1.1rem);
+}
+
+.set-start-end-coord:active {
+  transform: translateY(0);
+}
+
+#routing-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  gap: var(--space-xs);
+  padding-top: .5rem;
+
+}
+
+.generate-button {
+  position: relative;
+  width: fit-content;
+  padding: .5rem;
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-xs);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+  box-shadow: var(--action-shadow-sm);
+  white-space: nowrap;
+}
+
+.routing-svg-button {
+  padding: .35rem .45rem .35rem .45rem;
+}
+
+.generate-button svg {
+  color: white;
+  height: 16px;
+  width: 16px;
+}
+
+.generate-button:hover {
+  background: var(--blue-dark);
+  box-shadow: var(--generate-button-hover-shadow);
+  transform: translateY(-1px) translate3d(0, 0, 0);
+}
+
+.generate-button:active {
+  transform: translateY(0);
+  box-shadow: var(--generate-button-active-shadow);
+}
+
+/* SAVE / LOAD ROUTE PANEL */
+
+#mobile-save-route-container {
+  display: none;
+}
+
+#save-route-container {
+  position: static;
+}
+
+#save-route-button-container {
+  z-index: 1000;
+  position: absolute;
+  right: 9rem;
+  width: 13rem;
+  max-width: calc(100vw - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+#save-route-toggle-button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0 0 var(--panel-radius) var(--panel-radius);
+  border: none;
+  color: var(--ink);
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  gap: 5px;
+  transition: all 0.15s ease-in-out;
+}
+
+#save-route-toggle-button svg {
+  transition: transform 0.2s ease-in-out;
+}
+
+#save-route-toggle-button.opened svg {
+  transform: rotate(180deg);
+}
+
+#save-route-toggle-button.opened {
+  border-radius: 0;
+}
+
+#save-route {
+  overflow: hidden;
+  height: 0;
+  margin-right: 0.5rem;
+  background: var(--panel-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0 0 var(--panel-radius) var(--panel-radius);
+  border: none;
+  border-top: none;
+  width: 13rem;
+  max-width: 100%;
+  transition: all 0.15s ease-in-out;
+}
+
+#save-route-toggle-button:hover {
+  background: var(--panel-glass-bg-hover);
+}
+
+#save-route-toggle-button:hover + #save-route {
+  background: var(--panel-glass-bg-hover);
+}
+
+#save-route-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Generate Button positioning anchor */
+#generate-path-button {
+  position: relative;
+}
+
+/* Home Button */
+.home-button {
+  background: var(--secondary-btn-bg);
+  color: white;
+  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--home-button-shadow);
+  border: none;
+}
+
+.home-button i {
+  width: 16px;
+  height: 16px;
+}
+
+.home-button:hover {
+  background: var(--secondary-btn-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--home-button-hover-shadow);
+}
+
+.home-button:active {
+  transform: translateY(0);
+}
+
+#remove-point {
+  position: absolute;
+  display: none;
+}
+
+/* DELETE POINT MODAL */
+#point-name-display {
+  font-weight: 700;
+  color: var(--point-name-color);
+}
+
+/* RESPONSIVE STYLES */
+
+.mobile-nav-container {
+    display: none;
+    position: absolute;
+    top: 50px;
+    left: 15px;
+    z-index: 3;
+    flex-direction: column;
+}
+
+.mobile-actions-container {
+    display: none;
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    z-index: 2;
+    align-items: center;
+}
+
+.mobile-button {
+    background: var(--secondary-btn-bg);
+    color: white;
+    border: 1px solid white;
+    border-radius: var(--radius-md);
+    height: 2rem;
+    width: 2.5rem;
+    text-align: center;
+}
+
+.mobile-button svg {
+    height: 1rem;
+    width: 1rem;
+}
+
+.mobile-button:hover {
+    background: var(--secondary-btn-bg-hover);
+}
+
+.mobile-routing-button {
+  background: var(--blue);
+}
+
+.mobile-routing-button:hover {
+  background-color: var(--blue-dark);
+}
+
+#mobile-nav-dropdown-content {
+  display: flex;
+  flex-direction: column;
+  margin-top: 40px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  visibility: hidden;
+  transform: translateY(-.5rem);
+  pointer-events: none;
+  transition:
+    max-height .25s ease,
+    opacity .2s ease,
+    transform .25s ease,
+    visibility 0s linear .25s;
+}
+
+#mobile-nav-dropdown-content.show {
+  max-height: 24rem;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+#mobile-save-route-container {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    z-index: 2;
+  }
+
+  #mobile-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: .35rem;
+    max-width: 0;
+    margin-left: 0;
+    padding: .35rem 0;
+    overflow: hidden;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(-.5rem);
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    z-index: 3;
+    transition:
+      max-width .25s ease,
+      margin-left .25s ease,
+      padding-inline .25s ease,
+      opacity .2s ease,
+      transform .25s ease,
+      visibility 0s linear .25s;
+  }
+
+  #mobile-actions.show {
+    max-width: 12rem;
+    margin-left: .5rem;
+    padding-inline: .35rem;
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0);
+    background: none;
+    transition-delay: 0s;
+  }
+
+  #mobile-actions .mobile-routing-button {
+    flex: 0 0 auto;
+    transform: scale(.85);
+    transition: transform .2s ease;
+  }
+
+  #mobile-actions.show .mobile-routing-button {
+    transform: scale(1);
+  }
+
+  #mobile-actions-button[aria-expanded="true"] {
+    background: var(--secondary-btn-bg-hover);
+    box-shadow: var(--panel-shadow);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #mobile-actions,
+    #mobile-actions .mobile-routing-button {
+      transition: none;
+    }
+  }
+
+@media (max-width: 1024px) {
+  #start-end {
+    left: var(--side-nav-space);
+    max-width: calc(100vw - 28px);
+  }
+
+  #save-route-button-container {
+    right: 2.5rem;
+    width: 12rem;
+  }
+  
+  #save-route {
+    width: 12rem;
+  }
+}
+
+@media (max-width: 768px) {
+  #start-end {
+    display: none;
+  }
+
+  .mobile-nav-container {
+      display: flex;
+  }
+
+  .mobile-actions-container {
+    display: flex;
+  }
+
+  #save-route-button-container {
+    display: none;
+  }
+  
+  #mobile-save-route-container.show {
+    display: flex;
+  }
+
+  .ol-control {
+    display: none;
+  }
+
+  .mobile-attributions {
+    display: none;
+  }
+
+  .mobile-attribution-control {
+    display: block;
+  }
+
+  .mobile-attributions.show {
+    display: block;
+  }
+
+  #sidenav-shortcuts-button {
+    display: none;
+  }
+}

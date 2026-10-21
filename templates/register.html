@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Register</title>
+
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/base/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/base/reset.css') }}">
+
+    <!-- Page Specific CSS (auth.css)-->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/pages/auth.css') }}">
+
+    <!-- Component / Layout CSS-->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/layout/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/theme-toggle.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/components/error-toast.css') }}">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Favicon-->
+    <link rel="icon" href="https://images.crestr.co.uk/Crest-Logo.png" type="image/png">
+</head>
+<body>
+
+    <div id="error-toast-container"></div>
+
+    <!-- Navbar component -->
+    <nav id="navbar" class="surface">
+        <div id="left-nav-side" class="nav-sides">
+            <div id="navbar-logo-container">
+                <a href="https://crestr.co.uk" aria-label="Link to go to main landing page">
+                    <img src="https://images.crestr.co.uk/Crest-Logo.png" id="navbar-logo-image" alt="Crest logo">
+                </a>
+            </div>
+        </div>
+
+        <div id="right-nav-side" class="nav-sides">
+            <a href="javascript:history.back()" id="back-button" class="btn btn-ghost" aria-label="Link to go back to previous page">
+                <i data-lucide="chevron-left"></i>
+                Back
+            </a>
+        </div>
+        
+    </nav>
+
+    <div id="register-screen" class="auth-screen">
+        <div id="register-items" class="auth-card">
+            <div class="login_field">
+                <label id="register-validation-label" class="auth-validation-label"></label>
+            </div>
+
+            <div class="login_field">
+                <input class="auth-field-input" type="text" id="register-preferred-name-entry" placeholder=" ">
+                <label class="inner-entry-label" for="register-preferred-name-entry">Preferred Name</label>
+            </div>
+
+            <div class="login_field">
+                <input class="auth-field-input" type="text" id="register-username-entry" placeholder=" ">
+                <label class="inner-entry-label" for="register-username-entry">Username</label>
+                <label class="inner-entry-asterisk" for="register-username-entry">*</label>
+            </div>
+
+            <div class="login_field">
+                <input class="auth-field-input" type="password" id="register-password-entry1" placeholder=" ">
+                <label class="inner-entry-label" for="register-password-entry1">Password</label>
+                <label class="inner-entry-asterisk" for="register-password-entry1">*</label>
+                <i class="fa-solid fa-eye"></i>
+            </div>
+
+            <div class="login_field">
+                <input class="auth-field-input" type="password" id="register-password-entry2" placeholder=" ">
+                <label class="inner-entry-label" for="register-password-entry2">Confirm Password</label>
+                <label class="inner-entry-asterisk" for="register-password-entry2">*</label>
+                <i class="fa-solid fa-eye"></i>
+            </div>
+
+            <div id="password-requirements">
+                <p>Password must contain:</p>
+                <ul>
+                    <li id="req-length" class="req">At least 11 characters</li>
+                    <li id="req-number" class="req">At least one number</li>
+                    <li id="req-special" class="req">At least one special character</li>
+                    <li id="req-match" class="req">Passwords must match</li>
+                </ul>
+            </div>
+
+            <button id="register-button" class="auth-button auth-primary-button">Register</button>
+
+            <p id="register-privacy-notice">
+                By registering, you agree to our
+                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+            </p>
+        </div>
+
+        <div id="register_go_back_button_container" class="auth-switch-container">
+            <label for="register-switch-to-login-button" class="auth-switch-label">Already have an account?</label>
+            <button id="register-switch-to-login-button" class="auth-button auth-switch-button">Login</button>
+        </div>
+    </div>
+</body>
+<script type="module" src="{{ url_for('static', path=vite_asset('static/js/auth/auth-page.ts')) }}"></script>
+<script>
+    const apiRegisterUrl = "/auth/register";
+</script>
+</html>

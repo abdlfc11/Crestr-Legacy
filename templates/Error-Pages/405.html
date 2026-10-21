@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>405: Method not allowed</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/pages/error.css') }}">
+</head>
+<body>
+
+    <!-- reusable error containers -->
+    <div class="error-container">
+        <div class="error-code">405</div>
+        <div class="error-title">Method not allowed</div>
+        <div class="error-message">
+            Looks like you're off track! This action needs to be submitted from within the app.
+        </div>
+        <button class="error-button" onclick="window.location.href='/map'">
+            Go to Map
+        </button>
+    </div>
+
+</body>
+</html>

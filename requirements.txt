@@ -1,0 +1,34 @@
+# Database
+sqlmodel==0.0.22
+psycopg2-binary==2.9.9
+alembic==1.13.2
+
+# Geospatial & Pathfinding
+pyproj==3.6.1
+igraph==1.0.0  
+scipy==1.14.1  # needed for KDTree
+
+# fast api 
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.32
+Jinja2==3.1.0
+
+# Auth / Rate Limiting
+fastapi-limiter==0.2.0
+pyrate-limiter==4.4.0
+werkzeug==3.0.3
+
+
+# Utils
+python-dotenv==1.0.1
+requests==2.32.3
+gunicorn==23.0.0
+
+# Geospatial file processing support
+gpxpy==1.6.2
+arrow==1.4.0
+fastkml==1.4.0
+python-fitparse==2.3.0
+lxml>=5.3.0,<6.0.0
+pygeoif==1.6.0

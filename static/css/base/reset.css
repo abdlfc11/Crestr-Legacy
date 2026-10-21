@@ -1,0 +1,64 @@
+/* 
+  BASE / RESET
+
+  This defines global page-level rules that apply everywhere.
+*/
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: var(--bg);
+  font-family: var(--font-system);
+  overflow: hidden;
+}
+
+/* this disables interaction with the entire app during the tour */
+body.tour-active, 
+body.tour-active * {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* Overriding browser autofill colour */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+}
+
+html.dark input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #374151 inset !important;
+  -webkit-text-fill-color: #f3f4f6 !important;
+}
+
+/* This class is used on both links and buttons, signalling that the action cannot be performed
+  pointer-events is intentionally not set to none as hover interaction is required to register the tooltip
+  which adds further info to the user */
+.inactive {
+  cursor: not-allowed !important;
+  opacity: .8 !important;
+}
+
+.inactive[data-tooltip]::after,
+.inactive[data-tooltip]::before {
+  opacity: 1 !important;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* This respects reduced-motion preference 
+  Implemented as a general accessibility rule that applies
+   to any transition using these component classes on any page. */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .field-input,
+  .field-textarea {
+    transition: none;
+  }
+  body,
+  .surface {
+    transition: none;
+  }
+}
